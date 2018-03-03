@@ -59,7 +59,7 @@ class event(object):
 
         self.operation = operation
         self.oper_args = args
-        self.time = times
+        self.time = time
         self.node_id = node_id
 
     def __eq__(self, other):
@@ -84,7 +84,7 @@ class event(object):
 
         other_operation = self.operation == other.operation
 
-        if not other_operation
+        if not other_operation:
             return False
 
         other_time = self.time == other.time
@@ -96,12 +96,19 @@ class event(object):
 
     def __str__(self):
 
-        
+        if self.op == "INSERT" or self.op == r"DELETE":
+            e_str = str(self.oper_args.detail)
+        else:
+            e_str = "PL, dict_" + str(self.node_id)
+
+        human_r = self.op + "(" + e_str + "), "
+        human_r += str(self.time) + ", " + str(self.node_id)
+        return human_r
 
     def __repr__(self):
         return self.__str__()
 
 def main():
 
-    if __name__ = "__main__" :
+    if __name__ == "__main__" :
         main()
