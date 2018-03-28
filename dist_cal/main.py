@@ -2,6 +2,7 @@ import boto3
 import json
 import pickle
 from appointmet import appointmet, conflicting_appt
+from event import event,
 
 class node(object):
 
