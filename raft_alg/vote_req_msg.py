@@ -1,4 +1,4 @@
-from MainMsg import MainMsg
+from main_msg import MainMsg
 
 class RequestVoteMsg(MainMsg):
     msg_type = MainMsg.requestVote

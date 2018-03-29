@@ -1,12 +1,12 @@
 # header file for different states
 import time
-from MainMsg import MainMsg
-from VoteResponseMsg import VoteResponseMsg
+from main_msg import MainMsg
+from vote_response_msg import VoteResponseMsg
 
 class State(object):
 
-    def set_server(self, server):
-        self.server = server
+    def set_node(self, node):
+        self.node = node
 
     def msg_received(self, message):
 
@@ -39,14 +39,22 @@ class State(object):
         self.server.send_msg_resp(response_msg)
 
     def at_add_entries_phase(self, message):
+        """ Node is at adding entries phase """
 
     def at_request_vote_phase(self, message):
+        """ Node is at requesting vote phase """
+
 
     def at_request_response_phase(self, message):
+        """ Node is at requesting response phase """
 
     def at_vote_response_phase(self, message):
+        """ Node is at waiting vote response phase """
+
 
     def leader_on_timeout(self, message):
+        """ Node is at leader timeout phase """
+
 
     def next_timeout_term(self, message):
         self.currentTime = time.time()
