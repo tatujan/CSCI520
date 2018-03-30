@@ -4,7 +4,7 @@ import json
 # Create SQS client
 sqs = boto3.client('sqs')
 
-queue_url = 'https://sqs.us-west-2.amazonaws.com/072253473342/Node_3'
+queue_url = 'https://sqs.us-west-2.amazonaws.com/371203643100/node_1'
 
 # Receive message from SQS queue
 response = sqs.receive_message(
