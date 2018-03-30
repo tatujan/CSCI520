@@ -1,4 +1,5 @@
 import boto3
+from raft_alg.vote_req_msg import RequestVoteMsg
 
 # Create SQS client
 sqs = boto3.client('sqs', region_name='us-west-2')
