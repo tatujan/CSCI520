@@ -1,18 +1,19 @@
 import threading
+import zmq
 
 class Node(object):
 
-    def __init__(self, name, state, log, dictionary, message, neighbors):
+    def __init__(self, name, state, log, dictionary, neighbors):
 
         self.name = name
         self.state = state
         self.log = log
         self.dictionary = dictionary
-        self.message = message
         self.neighbors = neighbors
+        self.total_nodes = total_nodes
 
         #initializing node
-        self.committedIndex = 0
+        self.commitedIndex = 0
         self.currentTerm = 0
         self.lastApplied = 0
 
@@ -20,6 +21,8 @@ class Node(object):
         self.lastLogTerm = None
 
         self.state.set_node(self)
+        self.dictionary.set_owner(self)
+
 
     def send_msg():
 
@@ -39,12 +42,38 @@ class Node(object):
         state_after_msg, response_msg = self.state.rcvd_msg(message)
         self.state = state_after_msg
 
-class SubscribeThread(thread.threading):
-    def run(thread):
-        while True:
-            #received message
+class ZMQServer(Node):
 
-class PublishThread(thread.threading):
-    def run(thread):
-        while True:
-            #read value from dictionary and post the message
+    def __init__(self, name, state, log, dictionary, neighbors, port=5555):
+        super(ZMQServer, self).__init__(self, name, state, log, dictionary, neighbors)
+        self.port = 5555
+        class SubscribeThread(threading.Thread):
+            def run(thread):
+                context = zmq.Context()
+                socket = context.socket(zmq.SUB)
+                for n in neighbors:
+                    socket.connect("tcp://%s:%d" % (n.name, n.port))
+                while True:
+                    #received message
+                    message = socket.recv()
+                    self.rcvd_msg(message)
+
+        class PublishThread(threading.Thread):
+            def run(thread):
+                context = zmq.Context()
+                socket = context.socket(zmq.PUB)
+                socket.bind("tcp://%s:%d" % (n.name, n.port))
+                while True:
+                    #read value from dictionary and post the message
+                    message = self.dictionary.get_message()
+                    if not message:
+                        continue #DO NOTHING AND LISTEN
+                    socket.send(message)
+
+        self.subscribeThread = SubscribeThread()
+        self.publishThread = PublishThread()
+
+        self.subscribeThread.daemon = True
+        self.subscribeThread.start()
+        self.publishThread.daemon = True
+        self.publishThread.start()

@@ -1,0 +1,4 @@
+{"nonce": 1, "index": 0, "hash": "95d427460fcc43a8a6c3eb3164dd518d3784c482a893a9f4bf9909450d57b316", "timestamp": "2018-01-27 14:59:30.941469", "num_zeros": 0, "prev_hash": "0", "data": "genesis block"}
+{"nonce": 133112, "index": 1, "hash": "af5e58567cfad17c96cc0dfd1c8fab7e120ff77a3fd1c32ef605830e63540c96", "timestamp": "1524436688.02", "num_zeros": 5, "prev_hash": "95d427460fcc43a8a6c3eb3164dd518d3784c482a893a9f4bf9909450d57b316", "data": ["ss"]}
+{"nonce": 1283338, "index": 2, "hash": "47dc57a555c83cff88bd52b1bf4ff603da64c013c3b48d5c797a294afe1643b1", "timestamp": "1524436692.19", "num_zeros": 5, "prev_hash": "af5e58567cfad17c96cc0dfd1c8fab7e120ff77a3fd1c32ef605830e63540c96", "data": ["asd"]}
+{"nonce": 1856880, "index": 3, "hash": "ce616f2d05eed6dce2d6447526899bb22ed178e27c8d14a38375613b3040ff0f", "timestamp": "1524436726.55", "num_zeros": 5, "prev_hash": "47dc57a555c83cff88bd52b1bf4ff603da64c013c3b48d5c797a294afe1643b1", "data": ["asd"]}

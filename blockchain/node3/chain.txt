@@ -1,0 +1,1 @@
+{"nonce": 1, "index": 0, "hash": "95d427460fcc43a8a6c3eb3164dd518d3784c482a893a9f4bf9909450d57b316", "timestamp": "2018-01-27 14:59:30.941469", "num_zeros": 0, "prev_hash": "0", "data": "genesis block"}

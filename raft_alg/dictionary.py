@@ -13,7 +13,7 @@ class Dictionary(object):
         self.dictionary = sorted(self.dictionary,
                      key=lambda e: e.timestamp, reverse=True)
 
-    def rcv_message(self, message):
+    def rcv_message(self):
         if(len(self.dictionary) > 0):
             return self.dictionary.pop()
         else:
