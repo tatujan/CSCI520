@@ -1,9 +1,26 @@
-import os, json, hashlib, time, sys, pika, threading
+import os, json, hashlib, time, sys, pika, threading, random
+from random import randint
+
 
 from block import Block
 from pow import proof_of_work
 
+## TODO: ADD BALANCE: DONE!
+## TODO: verify incoming BLOCK: DONE!
+## TODO: Verifiers get rewards: DONE!
+## TODO: ADD CONSENSUS:
+
+with open('BALANCE.txt') as target:
+    BALANCE = target.readlines()[-1]
+    print(BALANCE)
+    print(type(BALANCE))
+    BALANCE = json.loads(BALANCE)
+    target.close()
+
+BALANCE_s = BALANCE
 CHAIN = 'chain.txt'
+
+VERIFIER_BAL = 0
 
 class Blockchain:
     def __init__(self):
@@ -30,21 +47,11 @@ class Blockchain:
                 genesis_block = target.readlines()[-1]
                 genesis_block = json.loads(genesis_block)
                 target.close()
-
-            # with open(self.chain_file, 'r') as file:
-            #     prev_block = file.readlines()[-1] # we are disregarding the '\n'
-            #     prev_block = json.loads(prev_block)
-            #     file.close()
-
             self._update_chain(genesis_block)
             return
 
     def _update_chain(self, block_dict):
         with open(self.chain_file, 'a') as file:
-            # print("here")
-            # print(block_dict)
-            # print("here2")
-            # print(json.dumps(block_dict))
             file.write(json.dumps(block_dict) + '\n')
             file.close()
         return
@@ -57,32 +64,44 @@ class Blockchain:
 
     def _validate_chain(self, _chain = ''):
         num_gen_block = 0
+        counter = 0
 
         if not _chain:
             _chain = self.chain_file
 
         with open(_chain, 'r') as file:
             for line in file:
-                block_to_validate = json.loads(line)
-                print('here4')
-                print(block_to_validate)
-                print(type(block_to_validate))
-                nonce = block_to_validate['nonce']
-                index = block_to_validate['index']
-                num_zeros = block_to_validate['num_zeros']
-                prev_hash = block_to_validate['prev_hash']
+                if not line.startswith('-'):
+                    block_to_validate = json.loads(line)
+                    nonce = block_to_validate['nonce']
+                    index = block_to_validate['index']
+                    num_zeros = block_to_validate['num_zeros']
+                    prev_hash = block_to_validate['prev_hash']
 
-                if index == 0:
-                    num_gen_block += 1
-                else:
-                    if not v_hash == prev_hash:
-                        raise ValueError('Broken Chain! Hash Mismatch!')
-                v_hash = block_to_validate['hash']
-                v_hash_to_validate = self._return_hash(prev_hash, nonce)
-                self._validate_hash(v_hash_to_validate, num_zeros)
+                    if index == 0:
+                        num_gen_block += 1
+                    else:
+                        if not v_hash == prev_hash:
+                            #raise ValueError('Broken Chain! Hash Mismatch!')
+                            if index != counter:
+                                with open(_chain,'r+') as target:
+                                    del_chain = target.readlines()
+                                    del del_chain[index + 1 :]
+                                    target.write('-'*10 + ' Broken Chain! Consensus Has Not Been Met! Switching a New Branch ' + '-'*10 + '\n')
+                                    print('Broken Chain! Consensus Has Not Been Met! Creating a New Branch')
+                                    for index in del_chain:
+                                        index1 = json.loads(index)
+                                        target.write(index)
+                                    target.close()
+                        else:
+                            pass
+                    counter += 1
+                    v_hash = block_to_validate['hash']
+                    v_hash_to_validate = self._return_hash(prev_hash, nonce)
+                    self._validate_hash(v_hash_to_validate, num_zeros)
 
-        if num_gen_block > 1:
-            raise ValueError('More than one genesis_block')
+        # if num_gen_block > 1:
+        #     raise ValueError('More than one genesis_block')
 
 
     def _return_hash(self, prev_hash, nonce):
@@ -98,12 +117,6 @@ class Blockchain:
             prev_block = file.readlines()[-1] # we are disregarding the '\n'
             prev_block = json.loads(prev_block)
             file.close()
-        #prev_block = prev_block[1:-1]
-        print('here3')
-        print(prev_block)
-        # import ast
-        # prev_block = ast.literal_eval(prev_block)
-        print(type(prev_block))
         index = prev_block['index'] + 1
         prev_hash = prev_block['hash']
         timestamp = str(time.time())
@@ -115,7 +128,8 @@ class Blockchain:
             data = self.data,
             prev_hash = prev_hash,
             nonce= nonce,
-            num_zeros = num_leading_z)
+            num_zeros = num_leading_z,
+            signed = 'False')
         #self._update_chain(self.block.fetch_block_data())
         self._send_block(self.block.fetch_block_data())
         self.data = []
@@ -125,28 +139,85 @@ class Blockchain:
         self.data.append(str(new_transaction))
 
     def _send_block(self, block_data):
+        # RabbitMQ!
         connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         channel = connection.channel()
 
         channel.exchange_declare(exchange='logs',
                                  exchange_type='fanout')
 
-        print(block_data)
+        # print(block_data)
         block = json.dumps(block_data)#str(block_data)#.encode('utf-8') # ' '.join(sys.argv[1:])
         channel.basic_publish(exchange='logs',
                               routing_key='',
                               body=block)
         print(" [x] Block Sent!\n")
-        print(block)
+        # print(block)
         connection.close()
 
+    def balance_update(self, input):
+        BALANCE_S = BALANCE
+        if not BALANCE[input['from']] > input['amount'] :
+            BALANCE_s[input['from']] = int(BALANCE[input['from']]) - int(input['amount'])
+            BALANCE_s[input['to']] = int(BALANCE[input['to']]) + int(input['amount'])
+            print('Balance update!\n')
+            return True
+
+        else:
+            print('Insufficient Balance!')
+            print(BALANCE)
+            return False
+
+    def balance_update_rcvd(self, body):
+        input = body['data']
+        input = input[0]
+        input = json.dumps(input)
+        print (input)
+        import ast
+        input = ast.literal_eval(input)
+        input = ast.literal_eval(input) # for some reason I needed to do this twice.
+        if BALANCE[input['from']] > input['amount']:
+            BALANCE[input['from']] = int(BALANCE[input['from']]) - int(input['amount'])
+            BALANCE[input['to']] = int(BALANCE[input['to']]) + int(input['amount'])
+            print('Balance update!\n')
+            self.print_balance(BALANCE)
+            return True
+        else:
+            print('Insufficient Balance!')
+            print(BALANCE)
+            return False
+
+    def print_balance(self,bal):
+        print('Node_1: ', BALANCE['n1'])
+        print('Node_2: ', BALANCE['n2'])
+        print('Node_3: ', BALANCE['n3'])
+
+
+    def _verify_block(self, block_to_verify, ver_bal):
+        nonce = block_to_verify['nonce']
+        index = block_to_verify['index']
+        num_zeros = block_to_verify['num_zeros']
+        prev_hash = block_to_verify['prev_hash']
+        hash = block_to_verify['hash']
+        hash_to_validate = self._return_hash(prev_hash, nonce)
+        if self._validate_hash(hash_to_validate, num_zeros):
+            self.signing_block(block_to_verify)
+            print('Got Reward for Verifying!')
+            ver_bal += 1
+            return True
+        else: return False
+
+    def signing_block(self, body):
+        body['signed'] = True
+        print('Block signed with sufficient Proof of Stake')
 
     def _reach_consensus(self):
-        # Node that has the longest chain wins
+        # request length of chain info from all other nodes and compare
+        # longest chain wins!
         pass
 
     def clear_blockchain(self):
-        self._create_chain_if_not_exist()
+        #self._create_chain_if_not_exist()
         os.remove(self.chain_file)
         self._create_chain_if_not_exist()
         self._create_genesis_block()
@@ -177,21 +248,19 @@ class ListenBlock:
         def callback(ch, method, properties, body):
             print(" [x] Received Block!\n %r \n" % body)
             blockchain = Blockchain()
-            if body == 'clear':
-                blockchain.clear_blockchain()
-            # UPDATE CHAIN IF INDEX is INDEX + 1
             body=json.loads(body)
-            blockchain._update_chain(body)
-            #
-            # with open('chain.txt', 'a') as file:
-            #     written_block = file.readlines()[-1]
-            #     written_block = written_block[1:-1]
-            #     file.write(written_block)
-            #     file.close()
+            if not body == 'New Transaction!':
+                if blockchain._verify_block(body, VERIFIER_BAL):
+                    blockchain.balance_update_rcvd(body)
+                    with open('BALANCE.txt', 'a') as target:
+                        target.write(json.dumps(BALANCE) + '\n')
+                        target.close()
+                    blockchain._update_chain(body)
+                else:
+                    raise ValueError('Cannot be verified!')
 
-
-
-
+            else:
+                pass
 
         channel.basic_consume(callback,
                               queue=queue_name,
@@ -213,24 +282,43 @@ if __name__ == '__main__':
     while True:
         BCoin._create_chain_if_not_exist()
         BCoin._create_genesis_block()
-        input = str(raw_input("Add transaction by simply typing it. To clear chain type clear or exit to exit.\n"))
-        input = input.lower()
-        if input != 'exit' and input != 'clear' and input != 'print_blockchain':
+        nodes =['n1', 'n2', 'n3']
+        while True:
+            first_n = random.choice(nodes)
+            second_n = random.choice(nodes)
+            amount = random.randint(1,5)
+            if not first_n == second_n:
+                break
+        input = {'from': first_n, 'to': second_n, 'amount': amount}
+        sleep_time = random.randint(5, 15)
+        time.sleep(sleep_time)
+        a = random.random()
+        a_str = str(a)
+        print('with ' + a_str + ' probability, create a new transaction')
+        if a < 0.2:
+            new_t = 'New Transaction!'
+            print('\n' + new_t + '\n')
+            BCoin._send_block(new_t)
+            print(input)
             BCoin.add_data_to_block(input)
-            BCoin.create_new_block()
             BCoin._validate_chain()
+            BCoin.create_new_block()
+        # with open('BALANCE.txt', 'a') as target:
+        #     target.write(json.dumps(BALANCE) + '\n')
+        #     target.close()
 
-
-        elif input != 'exit' and input != 'print_blockchain' and input == 'clear':
-            BCoin._send_block(input)
-            BCoin.clear_blockchain()
-
-        elif input != 'exit' and input != 'clear' and input == 'print_blockchain':
-            with open('chain.txt', 'r') as file:
-                chain = file.readlines()
-                file.close()
-            chain = str(chain)
-            print chain
-
-        else:
-            break
+        # if input[0] != 'exit' and input[0] != 'print_blockchain' and input[0] == 'clear':
+        #     BCoin._send_block(input)
+        #     #BCoin.clear_blockchain()
+        #
+        # elif input[0] != 'exit' and input[0] != 'clear' and input[0] == 'print_blockchain':
+        #     with open('chain.txt', 'r') as file:
+        #         chain = file.readlines()
+        #         file.close()
+        #     chain = str(chain)
+        #     print chain
+        # elif input[0] == 'exit':
+        #     break
+        #
+        # else:
+        #     pass

@@ -2,7 +2,7 @@ import hashlib
 
 class Block:
 
-    def __init__(self, index, timestamp, data, prev_hash, nonce, num_zeros):
+    def __init__(self, index, timestamp, data, prev_hash, nonce, num_zeros, signed=''):
         self.index = index
         self.timestamp = timestamp
         self.data = data
@@ -10,6 +10,7 @@ class Block:
         self.nonce = nonce
         self.num_zeros = num_zeros
         self.hash = self.hash_block()
+        self.signed = signed
 
 
     def hash_block(self):
@@ -27,6 +28,6 @@ class Block:
         block_data = {'index': self.index, 'timestamp':self.timestamp,
                         'data':self.data, 'prev_hash':self.prev_hash,
                         'nonce':self.nonce, 'num_zeros':self.num_zeros,
-                        'hash':self.hash}
+                        'hash':self.hash, 'signed':self.signed}
 
         return block_data

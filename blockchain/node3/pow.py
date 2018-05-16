@@ -1,10 +1,10 @@
 import hashlib
 
-def proof_of_work(prev_hash, num_leading_z = 5):
+def proof_of_work(prev_hash, num_leading_z = 4):
     nonce = None
     counter = 0
     leading_zeros = '0' * num_leading_z
-
+    print('Proof of Work in Progress...')
     while not nonce:
         sha_protocol = hashlib.sha256()
         sha_protocol.update(
